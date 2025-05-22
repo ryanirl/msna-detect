@@ -3,7 +3,7 @@ data/
 output/
 backup/
 notebooks/
-models/
+pretrained_models/
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
