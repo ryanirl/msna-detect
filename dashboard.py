@@ -226,6 +226,7 @@ def run_dashboard(doc, input_filepath: str, save_html: bool = False):
         layout = column(
             main_plot,
             range_plot,
+            margin = (25, 0, 0, 25)  # (top, right, bottom, left) in pixels
         )
         
         # Add to document

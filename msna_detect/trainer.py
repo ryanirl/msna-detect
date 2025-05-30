@@ -24,7 +24,7 @@ def train_one_step(
 
     optimizer.zero_grad(set_to_none = True)
     y_hat = model(x)
-    loss = criterion(y_hat[:, :, 1024:-1024], y[:, :, 1024:-1024])
+    loss = criterion(y_hat, y)
     loss.backward()
     optimizer.step()
 

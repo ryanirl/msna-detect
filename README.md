@@ -100,6 +100,12 @@ bursts = [burst1, burst2, ...]     # List of numpy arrays with binary burst anno
 
 ### Visualization Dashboard
 
+
+<p align="center">
+ <img src="./img/dashboard.png" width="98%">
+</p>
+
+
 The package includes an interactive visualization dashboard built with Bokeh
 that allows you to explore MSNA signals and their detected bursts. The dashboard
 provides:
@@ -133,9 +139,11 @@ The input CSV file should contain the following columns:
 
 Our approach utilizes a 1D convolutional neural network based on the U-Net architecture:
 
-1. **Input**: Normalized MSNA integrated signal
-2. **Processing**: Seven downsampling stages with ResNet-like encoder blocks followed by corresponding upsampling stages with skip connections
-3. **Output**: Probability map where peaks correspond to detected bursts
+1. **Input**: MSNA integrated signal. Normalization is done by the model.
+2. **Processing**: Four downsampling stages with ResNet-like encoder blocks
+followed by corresponding upsampling stages with skip connections.
+3. **Output**: Probability map where peaks correspond to detected bursts. Peak
+finding is done on this probability map to get out predicted bursts.
 
 The model is trained by:
 1. Transforming sparse binary annotations into soft distributions using Gaussian convolution
@@ -146,7 +154,7 @@ The model is trained by:
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the MIT License. See the `LICENSE` file for details.
 
 
 ## Citation
@@ -156,18 +164,9 @@ If you use this code in your research, please cite our paper:
 ```bibtex
 @article{msna2025,
   title={Muscle Sympathetic Nerve Activity Burst Detection},
-  author={Peters, Ryan and [Other Authors]},
-  journal={[Journal Name]},
-  year={2025},
-  volume={},
-  pages={}
+  author={Peters, Ryan},
+  year={2025}
 }
 ```
-
-
-## Contact
-
-For questions or comments, please contact ryanirl@icloud.com.
-
 
 
