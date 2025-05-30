@@ -11,15 +11,10 @@ from typing import List
 
 from msna_detect import MsnaModel
 
-# Data parameters
 SAMPLING_RATE = 250
 
-# Hyperparameters
-BURST_HEIGHT_THRESHOLD = 0.5
-BURST_DISTANCE = 100
 
-
-def main(filepath: str, output_path: str, epochs: int = 50, lr: float = 0.01, batch_size: int = 16, device: Optional[str] = None) -> None:
+def main(filepath: str, output_path: str, pretrained_path: Optional[str] = None, epochs: int = 50, lr: float = 0.01, batch_size: int = 16, device: Optional[str] = None) -> None:
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
     train_signal, train_bursts = _load_msna(filepath)
 
@@ -27,7 +22,15 @@ def main(filepath: str, output_path: str, epochs: int = 50, lr: float = 0.01, ba
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load the pretrained MSNA burst detection model.
-    model = MsnaModel(sampling_rate = SAMPLING_RATE, device = device)
+    if pretrained_path is not None:
+        model = MsnaModel.from_pretrained(pretrained_path)
+    else:
+        model = MsnaModel(sampling_rate = SAMPLING_RATE)
+
+    print(f"Model:\n{model.model}")
+    print(f"\nParmaters: {sum(p.numel() for p in model.model.parameters())}")
+
+    model.to(device)
     model.fit(
         train_signal = train_signal,
         train_bursts = train_bursts,
@@ -89,6 +92,10 @@ def parse_args():
         "--device", type = str, required = False, default = None, metavar = "",
         help = "The device to use for training."
     )
+    parser.add_argument(
+        "--pretrained", type = str, required = False, default = None, metavar = "",
+        help = "The path to the pretrained model to use."
+    )
     return parser.parse_args()
 
 
@@ -97,6 +104,7 @@ if __name__ == "__main__":
     main(
         filepath = args.input,
         output_path = args.output,
+        pretrained_path = args.pretrained,
         epochs = args.epochs,
         lr = args.lr,
         batch_size = args.batch_size,

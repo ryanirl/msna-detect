@@ -10,14 +10,11 @@ from typing import List
 from msna_detect import MsnaModel
 from msna_detect.metrics import msna_metric, peaks_from_bool_1d
 
-PRETRAINED_MODEL_PATH = "model.pt"
-
-# Data parameters
-SAMPLING_RATE = 250
+PRETRAINED_MODEL_PATH = "mac-model.pt"
 
 # Hyperparameters
-BURST_HEIGHT_THRESHOLD = 0.5
-BURST_DISTANCE = 100
+BURST_HEIGHT_THRESHOLD = 0.3
+BURST_DISTANCE = 50
 
 
 def main(filepath: str, device: str) -> None:
@@ -33,7 +30,7 @@ def main(filepath: str, device: str) -> None:
     precision_scores = []
     recall_scores = []
     for signal, burst in zip(signals, bursts):
-        burst_probabilities = model.predict(signal)
+        burst_probabilities = model.predict_proba(signal)
 
         # Now perform peak-finding to get the burst times
         burst_times = model.find_peaks(
@@ -63,7 +60,7 @@ def _load_msna(path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
         raise ValueError(f"The input path {path} is not a directory.")
     
     #files = glob.glob(os.path.join(path, "*.txt"))
-    files = glob.glob(os.path.join(path, "*.csv"))
+    files = sorted(glob.glob(os.path.join(path, "MSNA*.csv")))
     if len(files) == 0:
         raise ValueError(f"No files found in the input path {path}.")
     

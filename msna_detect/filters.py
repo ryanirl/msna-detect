@@ -29,12 +29,12 @@ def normalize_msna(msna: np.ndarray, fs: int = 250, axis: int = -1) -> np.ndarra
     msna = np.asarray(msna)
     msna = butter_filter(msna, fs = fs, cutoff_freq = [40.0], btype = "lowpass", axis = axis)
     msna = baseline_filter(msna, fs, axis = axis)
-    msna = standardize_percentile(msna, 5, 95)
-    msna = msna.clip(-0.2, 3.0)
+    msna = standardize_percentile(msna, 5, 50)
+    msna = msna.clip(-1, 9.0) - 1
     return msna
 
 
-def transform_bursts(bursts: np.ndarray, sigma: float = 15.0) -> np.ndarray:
+def transform_bursts(bursts: np.ndarray, sigma: float = 20.0) -> np.ndarray:
     """
     Generate the soft distributions for the bursts by convolving the sparse
     binary annotations with a symmetric Gaussian kernel.
@@ -48,7 +48,11 @@ def transform_bursts(bursts: np.ndarray, sigma: float = 15.0) -> np.ndarray:
     """
     bursts = np.asarray(bursts).astype(np.float32)
     bursts = ndi.gaussian_filter1d(bursts, sigma)
-    bursts = bursts / bursts.max()
+
+    max_val = bursts.max()
+    if max_val > 0:
+        bursts = bursts / max_val
+
     return bursts
 
 

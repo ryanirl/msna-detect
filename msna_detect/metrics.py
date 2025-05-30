@@ -50,7 +50,7 @@ def bin_predictions(
     true = []
     for i in range(len(l)):
         # Check if there's at least one prediction in this window
-        if np.sum((pred_peaks >= l[i]) & (pred_peaks < r[i])) >= 1: 
+        if np.any((pred_peaks >= l[i]) & (pred_peaks < r[i])):
             pred.append(True)
             true.append(True)
         else:
@@ -59,7 +59,7 @@ def bin_predictions(
             
         # Check gap to next peak (only if not the last peak)
         if i < len(l) - 1:
-            if np.sum((pred_peaks >= r[i]) & (pred_peaks < l[i+1])) >= 1: 
+            if np.any((pred_peaks >= r[i]) & (pred_peaks < l[i+1])):
                 pred.append(True)
                 true.append(False)
             else:
@@ -76,9 +76,10 @@ def scores(pred: np.ndarray, true: np.ndarray) -> Tuple[float, float, float]:
 
     tp, fp, tn, fn = confusion_matrix_values(pred, true)
     
-    recall = tp / (tp + fn)
-    precision = tp / (tp + fp)
-    f1 = (2 * precision * recall) / (precision + recall)
+    # Stable computation of recall, precision, and F1 score.
+    recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+    precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0.0
     
     return f1, precision, recall
  

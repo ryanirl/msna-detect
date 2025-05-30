@@ -20,11 +20,11 @@ from msna_detect.metrics import peaks_from_bool_1d
 SAMPLING_RATE = 250
 
 # Hyperparameters
-BURST_HEIGHT_THRESHOLD = 0.5
-BURST_DISTANCE = 100
+BURST_HEIGHT_THRESHOLD = 0.3
+BURST_DISTANCE = 50
 
 
-def main(filepath: str, output_path: str, epochs: int = 50, lr: float = 0.01, batch_size: int = 16, device: Optional[str] = None) -> None:
+def main(filepath: str, epochs: int = 50, lr: float = 0.01, batch_size: int = 16, device: Optional[str] = None) -> None:
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
     train_signal, train_bursts = _load_msna(filepath)
 
@@ -60,9 +60,10 @@ def main(filepath: str, output_path: str, epochs: int = 50, lr: float = 0.01, ba
             x_test = train_signal[i].reshape(-1)
             y_true = train_bursts[i]
             
-            y_pred = model(x_test)
-            y_pred = model.find_peaks(y_pred, height = BURST_HEIGHT_THRESHOLD, distance = BURST_DISTANCE)
+            # Predict the peaks using the model.
+            y_pred = model.predict(x_test, height = BURST_HEIGHT_THRESHOLD, distance = BURST_DISTANCE)
             
+            # Compute the metrics.
             f1, precision, recall = msna_metric(y_pred, peaks_from_bool_1d(y_true))
             f1_scores.append(f1)
             precision_scores.append(precision)
@@ -141,7 +142,6 @@ if __name__ == "__main__":
     args = parse_args()
     main(
         filepath = args.input,
-        output_path = args.output,
         epochs = args.epochs,
         lr = args.lr,
         batch_size = args.batch_size,

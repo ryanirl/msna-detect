@@ -45,6 +45,10 @@ class MsnaModel:
         self.sampling_rate = sampling_rate
         self.model_name = model
 
+        # The training results is a list to accommodate for pretraining, while
+        # maintaining the previous runs history.
+        self.training_results: List[Dict[str, Any]] = []
+
         self._alpha = 1.0
         self._is_fit = False
 
@@ -54,6 +58,7 @@ class MsnaModel:
         state_dict = torch.load(path)
         model = cls(state_dict["model_name"], state_dict["sampling_rate"])
         model.model.load_state_dict(state_dict["model_state_dict"])
+        model.training_results = state_dict["training_results"]
         model._alpha = state_dict["alpha"]
         model._is_fit = True
         return model
@@ -62,6 +67,7 @@ class MsnaModel:
         """Get the state dict of the model."""
         return {
             "model_state_dict": self.model.state_dict(),
+            "training_results": self.training_results,
             "model_name": self.model_name,
             "sampling_rate": self.sampling_rate,
             "alpha": self._alpha
@@ -89,15 +95,15 @@ class MsnaModel:
         criterion: Union[str, t_CRITERION] = "MSELoss",
         optimizer: Union[str, t_OPTIMIZER] = "Adam",
         transforms: Optional[Callable] = None,
-        sigma: float = 15.0,
-        epochs: int = 50,
+        sigma: float = 20.0,
+        epochs: int = 500,
         lr: float = 0.01,
         batch_size: int = 32,
         drop_last: bool = True,
         num_workers: int = 0,
         check_val_every_n_epochs: int = 1,
         verbose: bool = True
-    ) -> Dict[str, Any]:
+    ) -> MsnaModel:
         """ 
         Train the model on the given data. 
         
@@ -181,6 +187,8 @@ class MsnaModel:
             optimizer = _optimizer,
             train_dataloader = train_dataloader,
             val_dataloader = valid_dataloader,
+            #val_signals = valid_signal,
+            #val_bursts = valid_bursts,
             device = self.device,
             min_epochs = 1,
             max_epochs = epochs,
@@ -193,11 +201,13 @@ class MsnaModel:
         self._alpha = np.mean([
             np.percentile(self._predict(ts), 99) for ts in train_signal])
 
-        return results
+        self.training_results.append(results)
+
+        return self
 
     def re_calibrate(self, signal: np.ndarray) -> MsnaModel:
         """Re-calibrate the model on a new signal."""
-        self._alpha = np.percentile(self.predict(signal), 99)
+        self._alpha = np.percentile(self.predict_proba(signal), 99)
         return self
 
     def __call__(self, signal: np.ndarray) -> np.ndarray:
@@ -210,7 +220,7 @@ class MsnaModel:
         Returns:
             np.ndarray: The predicted signal of shape (b, c, t) or (c, t).
         """
-        return self.predict(signal)
+        return self.predict_proba(signal)
 
     @torch.no_grad()
     def _predict(self, signal: np.ndarray, window_size: Optional[int] = None, overlap: int = 128) -> np.ndarray:
@@ -243,9 +253,9 @@ class MsnaModel:
 
         return pred 
 
-    def predict(self, signal: np.ndarray, window_size: Optional[int] = None, overlap: int = 128) -> np.ndarray:
+    def predict_proba(self, signal: np.ndarray, window_size: Optional[int] = None, overlap: int = 128) -> np.ndarray:
         """
-        Perform inference on a new signal.
+        Perform inference on a new signal and return the predicted probabilities.
 
         Args:
             signal (np.ndarray): The signal to perform inference on of shape (b, c, t) or (c, t).
@@ -263,11 +273,21 @@ class MsnaModel:
 
         return pred
 
-    def find_peaks(self, signal: np.ndarray, height: float = 0.4, distance: int = 100) -> np.ndarray:
+    def find_peaks(self, signal: np.ndarray, height: float = 0.4, distance: int = 50) -> np.ndarray:
         """
         Find the peaks in the signal.
         """
         return _find_peaks(signal, height = height, distance = distance)[0]
+
+    def predict(self, signal: np.ndarray, window_size: Optional[int] = None, overlap: int = 128, height: float = 0.4, distance: int = 50) -> np.ndarray:
+        """
+        Perform inference on a new signal and return the predicted peaks.
+        """
+        peaks = self.find_peaks(
+            self.predict_proba(signal, window_size, overlap), 
+            height = height, distance = distance
+        )
+        return peaks 
 
 
 def _windowed_inference(signal: torch.Tensor, model: nn.Module, window_size: Optional[int] = None, overlap: int = 128) -> torch.Tensor:

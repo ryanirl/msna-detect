@@ -17,7 +17,7 @@ class MsnaRandomSliceDataset(Dataset):
         bursts: List[np.ndarray], 
         transforms: Optional[Callable] = None,
         batch_size: Optional[int] = None, 
-        window_size: int = 2048
+        window_size: int = 2048 * 4
     ) -> None:
         """
         A fast dataset for stochastic training when you have a small number of

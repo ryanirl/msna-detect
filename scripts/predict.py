@@ -10,8 +10,8 @@ PRETRAINED_MODEL_PATH = "model.pt"
 SAMPLING_RATE = 250
 
 # Hyperparameters
-BURST_HEIGHT_THRESHOLD = 0.5
-BURST_DISTANCE = 100
+BURST_HEIGHT_THRESHOLD = 0.3
+BURST_DISTANCE = 50
 
 
 def main(filepath: str, output_path: str, device: str) -> None:
@@ -23,7 +23,8 @@ def main(filepath: str, output_path: str, device: str) -> None:
     model.to(device)
 
     # Get the burst probabilities. This is also a numpy array of shape (time,).
-    burst_probabilities = model.predict(signal)
+    # Alternatively, you can use the `predict` method to directly get the burst times.
+    burst_probabilities = model.predict_proba(signal)
 
     # Now perform peak-finding to get the burst times
     burst_times = model.find_peaks(

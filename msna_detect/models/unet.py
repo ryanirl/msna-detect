@@ -19,12 +19,16 @@ def MiddleBlock(in_channels, out_channels):
 
 
 def FinalBlock(in_channels, out_channels):
-    return nn.Conv1d(in_channels, out_channels, kernel_size = 1, stride = 1, padding = "same")
+    return nn.Sequential(
+        nn.Conv1d(in_channels, in_channels, kernel_size = 1, stride = 1, padding = "same", bias = False),
+        nn.ReLU(inplace = True),
+        nn.Conv1d(in_channels, out_channels, kernel_size = 1, stride = 1, padding = "same")
+    )
 
 
 class ResidualBlock(nn.Module):
     """ Residual encoder block. """
-    def __init__(self, in_channels, feature_maps, stride = 1, downsample = None, pooling_size = 2):
+    def __init__(self, in_channels, feature_maps, stride = 1, pooling_size = 4):
         super(ResidualBlock, self).__init__()
 
         self.relu = nn.ReLU(inplace = True)
@@ -61,7 +65,7 @@ class ResidualBlock(nn.Module):
 
 
 class DecoderBlock(nn.Module):
-    def __init__(self, in_channels, out_channels, p = 2):
+    def __init__(self, in_channels, out_channels):
         super(DecoderBlock, self).__init__()
 
         self.conv_block_0 = ConvBlock(in_channels + out_channels, out_channels)
@@ -72,9 +76,7 @@ class DecoderBlock(nn.Module):
         x = nn.functional.interpolate(
             x, 
             size = skip_connection.shape[-1],
-            mode = "linear",
-            #mode = "nearest",
-            align_corners = False
+            mode = "nearest"
         )
 
         x = torch.cat((x, skip_connection), 1)
@@ -88,50 +90,38 @@ class Encoder(nn.Module):
     def __init__(self, in_channels: int) -> None:
         super(Encoder, self).__init__()
 
-        self.encoder_0 = ResidualBlock(in_channels, 32)
-        self.encoder_1 = ResidualBlock(32, 64)
-        self.encoder_2 = ResidualBlock(64, 128)
-        self.encoder_3 = ResidualBlock(128, 128)
-        self.encoder_4 = ResidualBlock(128, 128)
-        self.encoder_5 = ResidualBlock(128, 128)
-        self.encoder_6 = ResidualBlock(128, 128)
+        self.encoder_0 = ResidualBlock(in_channels, 8)
+        self.encoder_1 = ResidualBlock(8, 16)
+        self.encoder_2 = ResidualBlock(16, 32)
+        self.encoder_3 = ResidualBlock(32, 64)
 
-        self.middle = MiddleBlock(in_channels = 128, out_channels = 128)
+        self.middle = MiddleBlock(in_channels = 64, out_channels = 64)
 
     def forward(self, x):
         x, x0 = self.encoder_0(x)
         x, x1 = self.encoder_1(x)
         x, x2 = self.encoder_2(x)
         x, x3 = self.encoder_3(x)
-        x, x4 = self.encoder_4(x)
-        x, x5 = self.encoder_5(x)
-        x, x6 = self.encoder_6(x)
 
-        x7 = self.middle(x)
+        x4 = self.middle(x)
 
-        return [x0, x1, x2, x3, x4, x5, x6, x7]
+        return [x0, x1, x2, x3, x4]
 
     
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
 
-        self.decoder_0 = DecoderBlock(128, 128) 
-        self.decoder_1 = DecoderBlock(128, 128) 
-        self.decoder_2 = DecoderBlock(128, 128) 
-        self.decoder_3 = DecoderBlock(128, 128) 
-        self.decoder_4 = DecoderBlock(128, 128) 
-        self.decoder_5 = DecoderBlock(128, 64)
-        self.decoder_6 = DecoderBlock(64, 32)
+        self.decoder_0 = DecoderBlock(64, 64) 
+        self.decoder_1 = DecoderBlock(64, 32) 
+        self.decoder_2 = DecoderBlock(32, 16)
+        self.decoder_3 = DecoderBlock(16, 8)
 
-    def forward(self, x0, x1, x2, x3, x4, x5, x6, x7):
-        x = self.decoder_0(x7, x6)
-        x = self.decoder_1(x,  x5)
-        x = self.decoder_2(x,  x4)
-        x = self.decoder_3(x,  x3)
-        x = self.decoder_4(x,  x2)
-        x = self.decoder_5(x,  x1)
-        x = self.decoder_6(x,  x0)
+    def forward(self, x0, x1, x2, x3, x4):
+        x = self.decoder_0(x4, x3)
+        x = self.decoder_1(x,  x2)
+        x = self.decoder_2(x,  x1)
+        x = self.decoder_3(x,  x0)
 
         return x 
     
@@ -142,9 +132,9 @@ class Unet1d(nn.Module):
 
         self.backbone = Encoder(in_channels)
         self.head = Decoder()
-        self.final = FinalBlock(32, 1)
+        self.final = FinalBlock(8, 1)
 
-        self.downsample_factor = 2 ** 7
+        self.downsample_factor = 4 ** 4
         
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
