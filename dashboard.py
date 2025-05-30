@@ -189,13 +189,14 @@ def create_plots(data_source, true_burst_source, pred_burst_source, df):
     range_plot.x_range.end = max_time
     range_plot.y_range = Range1d(start = Y_RANGE_START, end = Y_RANGE_END)
     range_plot.yaxis.visible = False
+    range_plot.xaxis.visible = False
     
     # Create range tool
     range_tool = RangeTool(x_range = main_plot.x_range)
     range_tool.overlay.fill_color = "navy"
     range_tool.overlay.fill_alpha = 0.2
     range_plot.add_tools(range_tool)
-    
+
     # Add legend
     legend = Legend(items = [
         ("Integrated MSNA", [msna_line]),

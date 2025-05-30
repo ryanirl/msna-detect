@@ -1,5 +1,9 @@
 from setuptools import setup, find_packages
 
+# Read requirements from requirements.txt
+with open("requirements.txt") as f:
+    required = f.read().splitlines()
+
 setup(
     name="msna-detect",
     version="0.1.0",
@@ -26,14 +30,7 @@ setup(
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
     python_requires=">=3.7",
-    install_requires=[
-        "numpy>=1.19.0",
-        "torch>=1.10.0",
-        "scipy>=1.7.0",
-        "pandas>=1.3.0",
-        "tqdm>=4.60.0",
-        "matplotlib>=3.4.0",
-    ],
+    install_requires=required,
     keywords="msna, nerve activity, burst detection, deep learning, neural network, signal processing",
     project_urls={
         "Bug Reports": "https://github.com/ryanirl/msna-detect/issues",

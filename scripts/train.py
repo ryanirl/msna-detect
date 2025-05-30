@@ -11,10 +11,17 @@ from typing import List
 
 from msna_detect import MsnaModel
 
-SAMPLING_RATE = 250
 
-
-def main(filepath: str, output_path: str, pretrained_path: Optional[str] = None, epochs: int = 50, lr: float = 0.01, batch_size: int = 16, device: Optional[str] = None) -> None:
+def main(
+    filepath: str, 
+    output_path: str, 
+    pretrained_path: Optional[str] = None, 
+    epochs: int = 50, 
+    lr: float = 0.01, 
+    batch_size: int = 16, 
+    sampling_rate: int = 250,
+    device: Optional[str] = None
+) -> None:
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
     train_signal, train_bursts = _load_msna(filepath)
 
@@ -25,7 +32,7 @@ def main(filepath: str, output_path: str, pretrained_path: Optional[str] = None,
     if pretrained_path is not None:
         model = MsnaModel.from_pretrained(pretrained_path)
     else:
-        model = MsnaModel(sampling_rate = SAMPLING_RATE)
+        model = MsnaModel(sampling_rate = sampling_rate)
 
     print(f"Model:\n{model.model}")
     print(f"\nParmaters: {sum(p.numel() for p in model.model.parameters())}")
@@ -65,7 +72,8 @@ def _load_msna(path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog = "train", description = "Train a MSNA burst detection model.",
+        prog = "train", 
+        description = "Train a MSNA burst detection model.",
         formatter_class = argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
@@ -89,6 +97,10 @@ def parse_args():
         help = "The batch size to use."
     )
     parser.add_argument(
+        "--sampling-rate", type = int, required = False, default = 250, metavar = "",
+        help = "The sampling rate of the MSNA signal."
+    )
+    parser.add_argument(
         "--device", type = str, required = False, default = None, metavar = "",
         help = "The device to use for training."
     )
@@ -108,6 +120,7 @@ if __name__ == "__main__":
         epochs = args.epochs,
         lr = args.lr,
         batch_size = args.batch_size,
+        sampling_rate = args.sampling_rate,
         device = args.device
     )
 

@@ -1,28 +1,28 @@
 import pandas as pd
 import numpy as np
 import argparse
+import torch
 import glob
 import os
 
+from typing import Optional
 from typing import Tuple
 from typing import List
 
 from msna_detect import MsnaModel
-from msna_detect.metrics import msna_metric, peaks_from_bool_1d
-
-PRETRAINED_MODEL_PATH = "mac-model.pt"
-
-# Hyperparameters
-BURST_HEIGHT_THRESHOLD = 0.3
-BURST_DISTANCE = 50
+from msna_detect.metrics import msna_metric
+from msna_detect.metrics import peaks_from_bool_1d
 
 
-def main(filepath: str, device: str) -> None:
+def main(filepath: str, model_path: str, height_threshold: float = 0.3, distance: int = 50, device: Optional[str] = None) -> None:
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
     signals, bursts = _load_msna(filepath)
 
+    if device is None:
+        device = "cuda" if torch.cuda.is_available() else "cpu"
+
     # Load the pretrained MSNA burst detection model.
-    model = MsnaModel.from_pretrained(PRETRAINED_MODEL_PATH)
+    model = MsnaModel.from_pretrained(model_path)
     model.to(device)
 
     # Get the burst probabilities. This is also a numpy array of shape (time,).
@@ -34,7 +34,7 @@ def main(filepath: str, device: str) -> None:
 
         # Now perform peak-finding to get the burst times
         burst_times = model.find_peaks(
-            burst_probabilities, height = BURST_HEIGHT_THRESHOLD, distance = BURST_DISTANCE)
+            burst_probabilities, height = height_threshold, distance = distance)
 
         # Compute the F1 score
         f1_score, precision, recall = msna_metric(burst_times, peaks_from_bool_1d(burst))
@@ -59,8 +59,7 @@ def _load_msna(path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
     if not os.path.isdir(path):
         raise ValueError(f"The input path {path} is not a directory.")
     
-    #files = glob.glob(os.path.join(path, "*.txt"))
-    files = sorted(glob.glob(os.path.join(path, "MSNA*.csv")))
+    files = sorted(glob.glob(os.path.join(path, "*.csv")))
     if len(files) == 0:
         raise ValueError(f"No files found in the input path {path}.")
     
@@ -76,21 +75,40 @@ def _load_msna(path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog = "predict",
-        description = "Predict the burst times of a MSNA signal."
+        prog = "eval",
+        description = "Evaluate MSNA burst detection model performance.",
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
         "-i", "--input", type = str, required = True, metavar = "",
-        help = "The path to the input MSNA signal."
+        help = "The path to the input folder containing .csv files."
     )
     parser.add_argument(
-        "--device", type = str, required = False, metavar = "",
+        "-m", "--model", type = str, required = True, metavar = "",
+        help = "The path to the trained model file."
+    )
+    parser.add_argument(
+        "--device", type = str, required = False, default = "cpu", metavar = "",
         help = "The device to run the model on."
+    )
+    parser.add_argument(
+        "--height", type = float, required = False, default = 0.3, metavar = "",
+        help = "The height threshold for peak detection."
+    )
+    parser.add_argument(
+        "--distance", type = int, required = False, default = 50, metavar = "",
+        help = "The minimum distance between detected peaks."
     )
     return parser.parse_args()
 
 
 if __name__ == "__main__":
     args = parse_args()
-    main(args.input, args.device)
+    main(
+        filepath = args.input,
+        model_path = args.model,
+        device = args.device,
+        height_threshold = args.height,
+        distance = args.distance
+    )
 

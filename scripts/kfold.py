@@ -16,40 +16,42 @@ from msna_detect import MsnaModel
 from msna_detect.metrics import msna_metric
 from msna_detect.metrics import peaks_from_bool_1d
 
-# Data parameters
-SAMPLING_RATE = 250
 
-# Hyperparameters
-BURST_HEIGHT_THRESHOLD = 0.3
-BURST_DISTANCE = 50
-
-
-def main(filepath: str, epochs: int = 50, lr: float = 0.01, batch_size: int = 16, device: Optional[str] = None) -> None:
+def main(
+    filepath: str, 
+    epochs: int = 50, 
+    lr: float = 0.01, 
+    batch_size: int = 16, 
+    sampling_rate: int = 250,
+    device: Optional[str] = None, 
+    height_threshold: float = 0.3, 
+    distance: int = 50,
+    n_folds: int = 5
+) -> None:
+    """
+    Perform k-fold cross validation for MSNA burst detection.
+    """
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
-    train_signal, train_bursts = _load_msna(filepath)
+    signals, bursts = _load_msna(filepath)
 
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Create stratified k-fold splits
-    k_fold = KFold(n_splits = 5, shuffle = True, random_state = 42).split(train_signal)
+    k_fold = KFold(n_splits = n_folds, shuffle = True, random_state = 42).split(signals)
 
     models = []
     f1_scores = []
     precision_scores = []
     recall_scores = []
-    for train_inds, test_inds in tqdm(k_fold, total = 5):
-        x_train = [train_signal[i] for i in train_inds]
-        y_train = [train_bursts[i] for i in train_inds]
-        x_valid = [train_signal[i] for i in test_inds]
-        y_valid = [train_bursts[i] for i in test_inds]
+    for train_inds, test_inds in tqdm(k_fold, total = n_folds):
+        x_train = [signals[i] for i in train_inds]
+        y_train = [bursts[i] for i in train_inds]
         
-        model = MsnaModel(model = "unet1d", device = device)
+        model = MsnaModel(model = "unet1d", sampling_rate = sampling_rate, device = device)
         model.fit(
             train_signal = x_train,
             train_bursts = y_train,
-            valid_signal = x_valid,
-            valid_bursts = y_valid,
             lr = lr,
             batch_size = batch_size,
             epochs = epochs
@@ -57,18 +59,17 @@ def main(filepath: str, epochs: int = 50, lr: float = 0.01, batch_size: int = 16
         models.append(model)
 
         for i in test_inds:
-            x_test = train_signal[i].reshape(-1)
-            y_true = train_bursts[i]
+            x_test = signals[i].reshape(-1)
+            y_true = bursts[i]
             
             # Predict the peaks using the model.
-            y_pred = model.predict(x_test, height = BURST_HEIGHT_THRESHOLD, distance = BURST_DISTANCE)
+            y_pred = model.predict(x_test, height = height_threshold, distance = distance)
             
             # Compute the metrics.
             f1, precision, recall = msna_metric(y_pred, peaks_from_bool_1d(y_true))
             f1_scores.append(f1)
             precision_scores.append(precision)
             recall_scores.append(recall)
-            
             print(f"F1: {f1:.3f}, Precision: {precision:.3f}, Recall: {recall:.3f}")
 
     print("\nF1 Score:")
@@ -112,7 +113,8 @@ def _load_msna(path: str) -> Tuple[List[np.ndarray], List[np.ndarray]]:
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        prog = "train", description = "Train a MSNA burst detection model.",
+        prog = "kfold",
+        description = "Perform k-fold cross validation for MSNA burst detection.",
         formatter_class = argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
@@ -132,8 +134,24 @@ def parse_args():
         help = "The batch size to use."
     )
     parser.add_argument(
+        "--sampling-rate", type = int, required = False, default = 250, metavar = "",
+        help = "The sampling rate of the MSNA signal."
+    )
+    parser.add_argument(
         "--device", type = str, required = False, default = None, metavar = "",
         help = "The device to use for training."
+    )
+    parser.add_argument(
+        "--height", type = float, required = False, default = 0.3, metavar = "",
+        help = "The height threshold for peak detection."
+    )
+    parser.add_argument(
+        "--distance", type = int, required = False, default = 50, metavar = "",
+        help = "The minimum distance between detected peaks."
+    )
+    parser.add_argument(
+        "--folds", type = int, required = False, default = 5, metavar = "",
+        help = "The number of folds for cross validation."
     )
     return parser.parse_args()
 
@@ -145,6 +163,10 @@ if __name__ == "__main__":
         epochs = args.epochs,
         lr = args.lr,
         batch_size = args.batch_size,
-        device = args.device
+        sampling_rate = args.sampling_rate,
+        device = args.device,
+        height_threshold = args.height,
+        distance = args.distance,
+        n_folds = args.folds
     )
 

@@ -90,8 +90,6 @@ class MsnaModel:
         self,
         train_signal: List[np.ndarray],
         train_bursts: List[np.ndarray],
-        valid_signal: Optional[List[np.ndarray]] = None,
-        valid_bursts: Optional[List[np.ndarray]] = None,
         criterion: Union[str, t_CRITERION] = "MSELoss",
         optimizer: Union[str, t_OPTIMIZER] = "Adam",
         transforms: Optional[Callable] = None,
@@ -101,7 +99,6 @@ class MsnaModel:
         batch_size: int = 32,
         drop_last: bool = True,
         num_workers: int = 0,
-        check_val_every_n_epochs: int = 1,
         verbose: bool = True
     ) -> MsnaModel:
         """ 
@@ -114,8 +111,6 @@ class MsnaModel:
         Args:
             train_signal (List[np.ndarray]): The training signal data.
             train_bursts (List[np.ndarray]): The training burst data.
-            valid_signal (Optional[List[np.ndarray]]): The validation signal data.
-            valid_bursts (Optional[List[np.ndarray]]): The validation burst data.
             criterion (str): The loss function to use.
             optimizer (str): The optimizer to use.
             transforms (Optional[Callable]): The transforms to apply to the data.
@@ -125,7 +120,7 @@ class MsnaModel:
             batch_size (int): The batch size.
             drop_last (bool): Whether to drop the last batch.
             num_workers (int): The number of workers to use.
-            check_val_every_n_epochs (int): The number of epochs to check the validation set.
+            verbose (bool): Whether to print verbose output.
 
         Returns:
             MsnaModel: The trained model.
@@ -146,13 +141,9 @@ class MsnaModel:
 
         # Normalize the training and validation signals and bursts.
         train_signal = [normalize_msna(ts, self.sampling_rate) for ts in train_signal]
-        if valid_signal is not None:
-            valid_signal = [normalize_msna(ts, self.sampling_rate) for ts in valid_signal]
 
         # Generate the soft distributions for the training and validation bursts.
         train_bursts = [transform_bursts(ts, sigma) for ts in train_bursts]
-        if valid_bursts is not None:
-            valid_bursts = [transform_bursts(ts, sigma) for ts in valid_bursts]
 
         # Create the dataloaders.
         train_dataloader = DataLoader(
@@ -166,19 +157,6 @@ class MsnaModel:
             drop_last = drop_last,
             num_workers = num_workers
         )
-        valid_dataloader = None
-        if valid_signal is not None and valid_bursts is not None:
-            valid_dataloader = DataLoader(
-                dataset = MsnaRandomSliceDataset(
-                    signals = valid_signal, 
-                    bursts = valid_bursts, 
-                    transforms = transforms,
-                    batch_size = batch_size
-                ),
-                batch_size = batch_size,
-                drop_last = drop_last,
-                num_workers = num_workers
-            )
 
         # Train the model.
         results = torch_train(
@@ -186,13 +164,9 @@ class MsnaModel:
             criterion = _criterion,
             optimizer = _optimizer,
             train_dataloader = train_dataloader,
-            val_dataloader = valid_dataloader,
-            #val_signals = valid_signal,
-            #val_bursts = valid_bursts,
             device = self.device,
             min_epochs = 1,
             max_epochs = epochs,
-            check_val_every_n_epochs = check_val_every_n_epochs,
             verbose = verbose
         )
         self._is_fit = True
