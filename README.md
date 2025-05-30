@@ -52,7 +52,7 @@ signal = ...
 model = MsnaModel.from_pretrained("pretrained/model.pth")
 
 # Get burst probabilities
-burst_probs = model.predict(signal)
+burst_probs = model.predict_proba(signal)
 
 # Find burst peaks
 burst_locations = model.find_peaks(signal, height = 0.4, distance = 100)
@@ -87,6 +87,48 @@ model.save("my_trained_model.pth")
 For more advanced usage examples, see the `examples/` directory.
 
 
+## Dataset Format
+
+The model expects MSNA data as NumPy arrays. For training, both signals and burst annotations should be provided:
+
+```python
+# Example format for training data
+signals = [signal1, signal2, ...]  # List of numpy arrays, each of shape (time,)
+bursts = [burst1, burst2, ...]     # List of numpy arrays with binary burst annotations
+```
+
+
+### Visualization Dashboard
+
+The package includes an interactive visualization dashboard built with Bokeh
+that allows you to explore MSNA signals and their detected bursts. The dashboard
+provides:
+
+- Interactive visualization of the integrated MSNA signal
+- Overlay of true and predicted burst locations
+- Probability distribution of burst predictions
+- Navigation tools for exploring long recordings
+- Hover tools for detailed signal inspection
+
+To use the dashboard you can run the dashboard on a CSV file containing MSNA data
+
+```bash
+python dashboard.py --input path/to/your/data.csv
+```
+
+You can also export the dashboard as an HTML file
+
+```bash
+python dashboard.py --input path/to/your/data.csv --save
+```
+
+The input CSV file should contain the following columns:
+- `Integrated MSNA`: The normalized MSNA signal
+- `Burst`: Binary annotations of true bursts
+- `Predicted Burst`: Binary annotations of predicted bursts
+- `Predicted Probability`: Probability scores for burst predictions
+
+
 ## Architecture
 
 Our approach utilizes a 1D convolutional neural network based on the U-Net architecture:
@@ -100,17 +142,6 @@ The model is trained by:
 2. Random window sampling for computational efficiency
 3. Optimizing with mean squared error loss
 4. Post-processing with calibration to ensure consistent probability scaling
-
-
-## Dataset Format
-
-The model expects MSNA data as NumPy arrays. For training, both signals and burst annotations should be provided:
-
-```python
-# Example format for training data
-signals = [signal1, signal2, ...]  # List of numpy arrays, each of shape [channels, time]
-bursts = [burst1, burst2, ...]     # List of numpy arrays with binary burst annotations
-```
 
 
 ## License

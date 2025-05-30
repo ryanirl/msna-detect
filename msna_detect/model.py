@@ -95,7 +95,7 @@ class MsnaModel:
         criterion: Union[str, t_CRITERION] = "MSELoss",
         optimizer: Union[str, t_OPTIMIZER] = "Adam",
         transforms: Optional[Callable] = None,
-        sigma: float = 20.0,
+        sigma: float = 15.0,
         epochs: int = 500,
         lr: float = 0.01,
         batch_size: int = 32,

@@ -4,6 +4,7 @@ output/
 backup/
 notebooks/
 pretrained_models/
+archive/
 
 ### JupyterNotebooks ###
 # gitignore template for Jupyter Notebooks
