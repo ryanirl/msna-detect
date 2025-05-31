@@ -8,9 +8,21 @@ A deep learning framework for automated detection of bursts in Muscle Sympatheti
 
 ## Overview
 
-Muscle Sympathetic Nerve Activity (MSNA) provides direct measurement of sympathetic outflow to skeletal muscle vasculature, offering insight into neural mechanisms governing cardiovascular control. This repository presents a robust and efficient deep learning framework for automated detection of bursts in MSNA signals, addressing a challenging task that traditionally requires time-consuming manual annotation by experts. Our approach utilizes a 1D convolutional neural network based on U-Net architecture that reformulates burst detection by modeling probabilistic distributions around burst points. The framework exploits CNN translation invariance with random window sampling for efficient training, and can process recordings of arbitrary length without boundary artifacts during inference. 
+Muscle Sympathetic Nerve Activity (MSNA) provides direct measurement of
+sympathetic outflow to skeletal muscle vasculature, offering insight into neural
+mechanisms governing cardiovascular control. This repository presents a robust
+and efficient deep learning framework for automated detection of bursts in MSNA
+signals, addressing a challenging task that traditionally requires
+time-consuming manual annotation by experts. Our approach utilizes a 1D
+convolutional neural network based on U-Net architecture that reformulates burst
+detection by modeling probabilistic distributions around burst points. The
+framework exploits CNN translation invariance with random window sampling for
+efficient training, and can process recordings of arbitrary length without
+boundary artifacts during inference. In fact, models can be trained on most laptop
+CPU in under 4 minutes.
 
-This library provides a simple API for both training and inference, along with pre-trained models for immediate application.
+This library provides a simple API for both training and inference, along with
+pre-trained models for immediate application.
 
 
 ## Installation
@@ -38,7 +50,49 @@ pip install -e .
 See `requirements.txt` for the full list of dependencies.
 
 
-## Quick Start
+## Command Line Interface
+
+This directory contains command-line scripts for training, evaluating, and using
+the MSNA burst detection model. These scripts provide a convenient way to work
+with the MSNA detection library without writing Python code.
+
+Before using these scripts, you need to install the MSNA detection library.
+
+For the data format. The scripts expect CSV files with the following columns:
+- `Integrated MSNA`: The MSNA signal values
+- `Burst`: Binary annotations of true bursts (1 for burst, 0 for no burst)
+
+For prediction output, the following columns are added:
+- `Predicted Burst`: Binary predictions of bursts
+- `Predicted Probability`: Probability scores for each prediction
+
+
+### Training Script
+
+Trains a new MSNA burst detection model on your data.
+
+```bash
+msna-detect-train -i /path/to/training/data -o /path/to/save/model.pt [options]
+```
+
+### Prediction
+
+Uses a trained model to detect bursts in MSNA signals.
+
+```bash
+msna-detect-predict -i /path/to/input.csv -o /path/to/output.csv -m /path/to/model.pt [options]
+```
+
+### Evaluation
+
+Evaluates model performance on a test dataset.
+
+```bash
+msna-detect-eval -i /path/to/test/data -m /path/to/model.pt [options]
+```
+
+
+## Codebase Quick Start
 
 ### Inference with Pre-trained Model
 
@@ -87,7 +141,7 @@ model.save("my_trained_model.pth")
 For more advanced usage examples, see the `examples/` directory.
 
 
-## Dataset Format
+### Dataset Format
 
 The model expects MSNA data as NumPy arrays. For training, both signals and burst annotations should be provided:
 
@@ -98,7 +152,7 @@ bursts = [burst1, burst2, ...]     # List of numpy arrays with binary burst anno
 ```
 
 
-### Visualization Dashboard
+## Visualization Dashboard
 
 
 <p align="center">
@@ -133,6 +187,8 @@ The input CSV file should contain the following columns:
 - `Burst`: Binary annotations of true bursts
 - `Predicted Burst`: Binary annotations of predicted bursts
 - `Predicted Probability`: Probability scores for burst predictions
+
+A file like this can be generated from the `scripts/predict.py` file.
 
 
 ## Architecture

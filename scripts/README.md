@@ -59,26 +59,6 @@ Options:
 - `--distance`: Minimum distance between peaks (default: 50)
 
 
-### K-Fold Cross Validation (`kfold.py`)
-
-Performs k-fold cross validation on your dataset.
-
-```bash
-python kfold.py -i /path/to/data [options]
-```
-
-Options:
-- `-i, --input`: Path to data directory containing CSV files
-- `--epochs`: Number of epochs per fold (default: 1000)
-- `--lr`: Learning rate (default: 0.01)
-- `--batch-size`: Batch size (default: 16)
-- `--sampling-rate`: Sampling rate of MSNA signal in Hz (default: 250)
-- `--device`: Device to use (default: auto-detect CUDA)
-- `--height`: Height threshold for peak detection (default: 0.3)
-- `--distance`: Minimum distance between peaks (default: 50)
-- `--folds`: Number of folds (default: 5)
-
-
 ## Input Data Format
 
 The scripts expect CSV files with the following columns:
@@ -114,11 +94,3 @@ Make predictions:
 python predict.py -i data/test_signal.csv -o predictions.csv -m models/my_model.pt
 ```
 
-
-<br>
-
-Run cross-validation:
-
-```bash
-python kfold.py -i data/all --epochs 500 --sampling-rate 250 --folds 5
-```

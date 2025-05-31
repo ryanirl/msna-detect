@@ -1,6 +1,6 @@
 # This is a simplified dashboard to visualize the MSNA signal and the predicted bursts.
 # It is built with Bokeh and can be run with argparse.
-#
+
 import pandas as pd
 import numpy as np
 import argparse
