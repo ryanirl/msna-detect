@@ -3,7 +3,7 @@
 # A deep learning framework for automated detection of bursts in Muscle
 # Sympathetic Nerve Activity (MSNA) signals.
 #
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "Ryan 'RyanIRL' Peters"
 __license__ = "MIT"
 

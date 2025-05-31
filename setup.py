@@ -1,15 +1,15 @@
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="msna-detect",
-    version="0.1.0",
+    version="0.1.1",
     description="A deep learning framework for automated detection of bursts in Muscle Sympathetic Nerve Activity.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     author="Ryan 'RyanIRL' Peters",
     author_email="RyanIRL@icloud.com",
     url="https://github.com/ryanirl/msna-detect",
-    packages=["msna_detect", "scripts"],  # Multi-file package
+    packages=["msna_detect", "msna_detect.models", "msna_detect.utils", "scripts"],  # Multi-file package
     classifiers=[
         "Development Status :: 3 - Alpha",
         "Intended Audience :: Developers",
