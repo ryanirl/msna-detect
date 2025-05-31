@@ -114,8 +114,7 @@ def create_plots(data_source, true_burst_source, pred_burst_source, df):
     # Set initial x-range
     max_time = df["time"].max()
     initial_end = min(10000, max_time)
-    main_plot.x_range.start = 0
-    main_plot.x_range.end = initial_end
+    main_plot.x_range = Range1d(start = 0, end = initial_end)
     
     # Plot the integrated MSNA signal
     msna_line = main_plot.line(
