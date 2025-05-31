@@ -8,7 +8,7 @@ from typing import Optional
 from msna_detect import MsnaModel
 
 
-def main(
+def predict(
     filepath: str, 
     output_path: str, 
     model_path: str, 
@@ -85,9 +85,9 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
-    main(
+    predict(
         filepath = args.input,
         output_path = args.output,
         model_path = args.model,
@@ -95,4 +95,8 @@ if __name__ == "__main__":
         height_threshold = args.height,
         distance = args.distance
     )
+
+
+if __name__ == "__main__":
+    main()
 

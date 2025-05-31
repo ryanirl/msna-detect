@@ -1,3 +1,8 @@
+# Testing pipeline
+test.sh
+example.csv
+mac-model.pt
+
 figures/
 data/
 output/

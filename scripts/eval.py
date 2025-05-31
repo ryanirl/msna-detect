@@ -14,7 +14,7 @@ from msna_detect.metrics import msna_metric
 from msna_detect.metrics import peaks_from_bool_1d
 
 
-def main(filepath: str, model_path: str, height_threshold: float = 0.3, distance: int = 50, device: Optional[str] = None) -> None:
+def eval(filepath: str, model_path: str, height_threshold: float = 0.3, distance: int = 50, device: Optional[str] = None) -> None:
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
     signals, bursts = _load_msna(filepath)
 
@@ -102,13 +102,17 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
-    main(
+    eval(
         filepath = args.input,
         model_path = args.model,
         device = args.device,
         height_threshold = args.height,
         distance = args.distance
     )
+
+
+if __name__ == "__main__":
+    main()
 

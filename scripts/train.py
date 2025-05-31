@@ -12,7 +12,7 @@ from typing import List
 from msna_detect import MsnaModel
 
 
-def main(
+def train(
     filepath: str, 
     output_path: str, 
     pretrained_path: Optional[str] = None, 
@@ -111,9 +111,9 @@ def parse_args():
     return parser.parse_args()
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
-    main(
+    train(
         filepath = args.input,
         output_path = args.output,
         pretrained_path = args.pretrained,
@@ -123,4 +123,8 @@ if __name__ == "__main__":
         sampling_rate = args.sampling_rate,
         device = args.device
     )
+
+
+if __name__ == "__main__":
+    main()
 

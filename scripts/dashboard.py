@@ -211,7 +211,7 @@ def create_plots(data_source, true_burst_source, pred_burst_source, df):
     return main_plot, range_plot
 
 
-def run_dashboard(doc, input_filepath: str, save_html: bool = False):
+def dashboard(doc, input_filepath: str, save_html: bool = False):
     """Main function to create and run the dashboard"""
     try:
         # Load data
@@ -245,9 +245,9 @@ def run_dashboard(doc, input_filepath: str, save_html: bool = False):
         doc.title = "MSNA Signal Visualization - Error"
 
 
-def main(input_filepath: str, save: bool = False):
+def run_dashboard(input_filepath: str, save: bool = False):
     """Main function to start the Bokeh server with the dashboard"""
-    bokeh_app = Application(FunctionHandler(lambda doc: run_dashboard(doc, input_filepath, save_html = save)))
+    bokeh_app = Application(FunctionHandler(lambda doc: dashboard(doc, input_filepath, save_html = save)))
     server = Server(
         applications = {"/": bokeh_app}, 
         io_loop = IOLoop(), 
@@ -264,7 +264,11 @@ def main(input_filepath: str, save: bool = False):
 
 def parse_args() -> argparse.Namespace:
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(description = "MSNA Signal Visualization Dashboard")
+    parser = argparse.ArgumentParser(
+        prog = "dashboard",
+        description = "Dashboard for visualizing MSNA predictions alongside the signal.",
+        formatter_class = argparse.ArgumentDefaultsHelpFormatter
+    )
     parser.add_argument(
         "-i", "--input", type = str, required = True, 
         help = "The path to the input data (csv file)."
@@ -277,8 +281,12 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-if __name__ == "__main__":
+def main():
     args = parse_args()
-    main(input_filepath = args.input, save = args.save)
+    run_dashboard(input_filepath = args.input, save = args.save)
+
+
+if __name__ == "__main__":
+    main()
 
 

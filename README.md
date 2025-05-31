@@ -91,6 +91,8 @@ Evaluates model performance on a test dataset.
 msna-detect-eval -i /path/to/test/data -m /path/to/model.pt [options]
 ```
 
+All scripts can be run with the `-h` of `--help` tag to get the additional options.
+
 
 ## Codebase Quick Start
 
