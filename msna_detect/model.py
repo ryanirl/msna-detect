@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import warnings
+import os
 
 import torch
 import torch.nn as nn
@@ -16,6 +17,11 @@ from msna_detect.dataset import MsnaRandomSliceDataset
 from msna_detect.utils.ndtiler import dynamic_tile_nd
 from msna_detect.filters import normalize_msna
 from msna_detect.filters import transform_bursts
+
+from msna_detect.utils.download import download_pretrained_model
+from msna_detect.utils.download import PRETRAINED_MODELS
+from msna_detect.utils.download import list_pretrained_models
+from msna_detect.utils.download import clear_model_cache
 
 from typing import Callable
 from typing import Optional
@@ -53,15 +59,47 @@ class MsnaModel:
         self._is_fit = False
 
     @classmethod
-    def from_pretrained(cls, path: str) -> MsnaModel:
-        """Load a pretrained model from a file."""
-        state_dict = torch.load(path)
+    def from_pretrained(cls, path: str, force_download: bool = False, quiet: bool = False) -> MsnaModel:
+        """
+        Load a pretrained model from a file or download from the model registry.
+        
+        Args:
+            path (str): Either a local file path or a pretrained model name from the registry
+            force_download (bool): If True, force re-download of pretrained models
+            quiet (bool): If True, suppress download messages
+            
+        Returns:
+            MsnaModel: The loaded model
+        """
+        # Check if this is a pretrained model name
+        if path in PRETRAINED_MODELS:
+            path = download_pretrained_model(path, force_download = force_download, quiet = quiet)
+        elif not os.path.exists(path):
+            # Check if it might be a pretrained model name that doesn't exist in registry
+            available_models = list(PRETRAINED_MODELS.keys())
+            raise FileNotFoundError(
+                f"Model file not found: {path}\n. If you meant to use a "
+                f"pretrained model, available options are: {available_models}"
+            )
+        
+        # Load the model state dict
+        state_dict = torch.load(path, map_location = "cpu")
         model = cls(state_dict["model_name"], state_dict["sampling_rate"])
         model.model.load_state_dict(state_dict["model_state_dict"])
         model.training_results = state_dict["training_results"]
         model._alpha = state_dict["alpha"]
         model._is_fit = True
         return model
+
+    @staticmethod
+    def list_pretrained() -> None:
+        """List all available pretrained models."""
+        list_pretrained_models()
+
+    @staticmethod
+    def clear_cache() -> None:
+        """Clear the model cache directory."""
+        clear_model_cache()
 
     def state_dict(self) -> Dict[str, Any]:
         """Get the state dict of the model."""

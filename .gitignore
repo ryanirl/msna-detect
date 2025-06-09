@@ -1,4 +1,5 @@
 # Testing pipeline
+*.csv
 test.sh
 example.csv
 mac-model.pt

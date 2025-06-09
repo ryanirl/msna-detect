@@ -14,7 +14,15 @@ from msna_detect.metrics import msna_metric
 from msna_detect.metrics import peaks_from_bool_1d
 
 
-def eval(filepath: str, model_path: str, height_threshold: float = 0.3, distance: int = 50, device: Optional[str] = None) -> None:
+def eval(
+    filepath: str, 
+    model_path: str, 
+    height_threshold: float = 0.3, 
+    distance: int = 50, 
+    device: Optional[str] = None,
+    force_download: bool = False,
+    quiet: bool = False
+) -> None:
     # Load the MSNA signal from the input file. This is a numpy array of shape (time,).
     signals, bursts = _load_msna(filepath)
 
@@ -22,7 +30,7 @@ def eval(filepath: str, model_path: str, height_threshold: float = 0.3, distance
         device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # Load the pretrained MSNA burst detection model.
-    model = MsnaModel.from_pretrained(model_path)
+    model = MsnaModel.from_pretrained(model_path, force_download = force_download, quiet = quiet)
     model.to(device)
 
     # Get the burst probabilities. This is also a numpy array of shape (time,).
@@ -80,12 +88,12 @@ def parse_args():
         formatter_class = argparse.ArgumentDefaultsHelpFormatter
     )
     parser.add_argument(
-        "-i", "--input", type = str, required = True, metavar = "",
+        "-i", "--input", type = str, metavar = "",
         help = "The path to the input folder containing .csv files."
     )
     parser.add_argument(
-        "-m", "--model", type = str, required = True, metavar = "",
-        help = "The path to the trained model file."
+        "-m", "--model", type = str, metavar = "",
+        help = "The path to the trained model file or name of pretrained model (e.g., 'msna-v1')."
     )
     parser.add_argument(
         "--device", type = str, required = False, default = "cpu", metavar = "",
@@ -99,20 +107,49 @@ def parse_args():
         "--distance", type = int, required = False, default = 50, metavar = "",
         help = "The minimum distance between detected peaks."
     )
+    parser.add_argument(
+        "--force-download", action = "store_true",
+        help = "Force re-download of pretrained models even if they exist locally."
+    )
+    parser.add_argument(
+        "--quiet", action = "store_true",
+        help = "Suppress download messages."
+    )
+    parser.add_argument(
+        "--list-models", action = "store_true",
+        help = "List available pretrained models and exit."
+    )
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
+    
+    # Handle special commands
+    if args.list_models:
+        MsnaModel.list_pretrained()
+        return
+    
+    # Check required arguments when not listing models
+    if not args.input:
+        print("Error: -i/--input is required")
+        return
+    if not args.model:
+        print("Error: -m/--model is required")
+        return
+    
     eval(
         filepath = args.input,
         model_path = args.model,
         device = args.device,
         height_threshold = args.height,
-        distance = args.distance
+        distance = args.distance,
+        force_download = args.force_download,
+        quiet = args.quiet
     )
 
 
 if __name__ == "__main__":
     main()
+
 

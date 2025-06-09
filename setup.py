@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="msna-detect",
-    version="0.1.1",
+    version="0.1.3",
     description="A deep learning framework for automated detection of bursts in Muscle Sympathetic Nerve Activity.",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
@@ -34,7 +34,8 @@ setup(
         "tqdm>=4.60.0",
         "scikit-learn>=1.0.0",
         "bokeh>=2.4.0",
-        "tornado>=6.1.0"
+        "tornado>=6.1.0",
+        "gdown==5.2.0"
     ],
     entry_points={
         "console_scripts": [

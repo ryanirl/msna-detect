@@ -17,9 +17,11 @@ time-consuming manual annotation by experts. Our approach utilizes a 1D
 convolutional neural network based on U-Net architecture that reformulates burst
 detection by modeling probabilistic distributions around burst points. The
 framework exploits CNN translation invariance with random window sampling for
-efficient training, and can process recordings of arbitrary length without
-boundary artifacts during inference. In fact, models can be trained on most laptop
-CPU in under 4 minutes.
+efficient training, but then can process recordings of arbitrary length (without 
+windowing) during inference to exploit the full receptive field of our models and
+avoid unnecessary boundary artifacts that are typically introduced when windowing. 
+This enables models to be trained (from scratch) on most laptop CPUs in under 4 minutes.
+A diagram of the model can be found in `img/` folder.
 
 This library provides a simple API for both training and inference, along with
 pre-trained models for immediate application.
@@ -33,38 +35,40 @@ You can install the package from PyPI:
 pip install msna-detect
 ```
 
-Or you can install from source:
-
-```bash
-# Clone the repository
-git clone https://github.com/ryanirl/msna-detect.git
-cd msna-detect
-
-# Install dependencies
-pip install -r requirements.txt
-
-# Install the package
-pip install -e .
-```
-
 See `requirements.txt` for the full list of dependencies.
 
 
-## Command Line Interface
+
+## Quick Start
+
+We provide one pretrained model, that was trained on synthetic dataset generated
+from our other `msna-sim` library. A sample dataset can be download [here](https://drive.google.com/file/d/1nuayGCYgfn1Ke0xytR7krwXOLnAPiVjn/view?usp=sharing). The fasted way to get started
+with using the tools in this library, would be to download the sample data and run inference on it with our pretrained model.
+
+```bash
+pip install msna-detect
+
+# Make sure you download the sample data first. 
+msna-detect-predict -i sample-data.csv -o predictions.csv -m msna-v1
+
+# Visualize the predictions against the ground-truth using the dashboard. 
+msna-detect-dashboard -i predictions.csv
+```
+
+Below, we provide more details about how to use the command-line interface, and
+the codebase itself.
+
+
+## CLI 
 
 This directory contains command-line scripts for training, evaluating, and using
 the MSNA burst detection model. These scripts provide a convenient way to work
 with the MSNA detection library without writing Python code.
 
-Before using these scripts, you need to install the MSNA detection library.
-
-For the data format. The scripts expect CSV files with the following columns:
+Before using these scripts, you need to install the MSNA detection library. Furthermore,
+the scripts expect CSV files with the following columns:
 - `Integrated MSNA`: The MSNA signal values
 - `Burst`: Binary annotations of true bursts (1 for burst, 0 for no burst)
-
-For prediction output, the following columns are added:
-- `Predicted Burst`: Binary predictions of bursts
-- `Predicted Probability`: Probability scores for each prediction
 
 
 ### Training Script
@@ -94,24 +98,24 @@ msna-detect-eval -i /path/to/test/data -m /path/to/model.pt [options]
 All scripts can be run with the `-h` of `--help` tag to get the additional options.
 
 
-## Codebase Quick Start
+## Codebase Examples
 
 ### Inference with Pre-trained Model
 
 ```python
 from msna_detect import MsnaModel
 
-# Load your MSNA signal (should be shape [channels, time] or [time])
+# Load your MSNA signal (should be shape (time,))
 signal = ...
 
 # Load the pre-trained model
-model = MsnaModel.from_pretrained("pretrained/model.pth")
+model = MsnaModel.from_pretrained("msna-v1")
 
 # Get burst probabilities
 burst_probs = model.predict_proba(signal)
 
 # Find burst peaks
-burst_locations = model.find_peaks(signal, height = 0.4, distance = 100)
+burst_locations = model.find_peaks(signal, height = 0.3, distance = 50)
 
 print(f"Found {len(burst_locations)} bursts")
 ```
@@ -123,7 +127,6 @@ from msna_detect import MsnaModel
 
 # Prepare your training data
 signals = [signal1, signal2, ...]  # List of numpy arrays, each of shape [channels, time]
-
 bursts = [burst1, burst2, ...]     # List of numpy arrays with binary burst annotations
 
 # Create and train a model
@@ -137,7 +140,7 @@ model.fit(
 )
 
 # Save the trained model
-model.save("my_trained_model.pth")
+model.save("my_trained_model.pt")
 ```
 
 For more advanced usage examples, see the `examples/` directory.
@@ -152,7 +155,6 @@ The model expects MSNA data as NumPy arrays. For training, both signals and burs
 signals = [signal1, signal2, ...]  # List of numpy arrays, each of shape (time,)
 bursts = [burst1, burst2, ...]     # List of numpy arrays with binary burst annotations
 ```
-
 
 ## Visualization Dashboard
 
@@ -175,39 +177,22 @@ provides:
 To use the dashboard you can run the dashboard on a CSV file containing MSNA data
 
 ```bash
-python dashboard.py --input path/to/your/data.csv
+msna-detect-dashboard -i path/to/your/data.csv
 ```
 
-You can also export the dashboard as an HTML file
+You can also export the dashboard as an HTML file. This can be sent to people without them having to install anything. 
 
 ```bash
-python dashboard.py --input path/to/your/data.csv --save
+msna-detect-dashboard -i path/to/your/data.csv --save
 ```
 
-The input CSV file should contain the following columns:
+For the dashboard, the input CSV file should contain the following columns:
 - `Integrated MSNA`: The normalized MSNA signal
 - `Burst`: Binary annotations of true bursts
 - `Predicted Burst`: Binary annotations of predicted bursts
 - `Predicted Probability`: Probability scores for burst predictions
 
-A file like this can be generated from the `scripts/predict.py` file.
-
-
-## Architecture
-
-Our approach utilizes a 1D convolutional neural network based on the U-Net architecture:
-
-1. **Input**: MSNA integrated signal. Normalization is done by the model.
-2. **Processing**: Four downsampling stages with ResNet-like encoder blocks
-followed by corresponding upsampling stages with skip connections.
-3. **Output**: Probability map where peaks correspond to detected bursts. Peak
-finding is done on this probability map to get out predicted bursts.
-
-The model is trained by:
-1. Transforming sparse binary annotations into soft distributions using Gaussian convolution
-2. Random window sampling for computational efficiency
-3. Optimizing with mean squared error loss
-4. Post-processing with calibration to ensure consistent probability scaling
+A file like this can be generated from the `msna-detect-predict` command-line tool.
 
 
 ## License
